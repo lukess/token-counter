@@ -25,7 +25,7 @@ cp target/release/token-counter /usr/local/bin/
 token-counter https://api.example.com/data
 
 # MCP server - get token count for tools/list response
-token-counter --mcp https://mcp-server.example.com/mcp
+token-counter -M https://mcp-server.example.com/mcp
 
 # Use specific encoding (default: o200k_base)
 token-counter -m cl100k_base https://api.example.com/data
@@ -45,7 +45,7 @@ token-counter --headers "Authorization:Bearer token123" https://api.example.com/
 | Option | Description |
 |--------|-------------|
 | `-m, --model <MODEL>` | Tokenizer encoding (default: o200k_base) |
-| `--mcp` | Treat URL as MCP server (sends tools/list request) |
+| `-M, --mcp` | Treat URL as MCP server (sends tools/list request) |
 | `-t, --timeout <SECS>` | Request timeout in seconds (default: 30) |
 | `-k, --insecure` | Skip TLS certificate verification |
 | `-j, --json` | Output result as JSON |

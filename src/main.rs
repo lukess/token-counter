@@ -25,7 +25,7 @@ struct Args {
     model: String,
 
     /// Treat URL as MCP server endpoint (sends tools/list request)
-    #[arg(long)]
+    #[arg(short = 'M', long)]
     mcp: bool,
 
     /// Request timeout in seconds
