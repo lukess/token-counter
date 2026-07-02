@@ -14,7 +14,11 @@ const DEFAULT_TIMEOUT_SECS: u64 = 30;
 struct Args {
     /// URL to fetch (REST API or MCP server)
     #[arg(value_name = "URL")]
-    url: String,
+    url: Option<String>,
+
+    /// Local file to read input from instead of a URL
+    #[arg(short = 'f', long, value_name = "PATH")]
+    file: Option<String>,
 
     /// Tokenizer encoding:
     /// - o200k_base: GPT-4o, GPT-4o mini (omni models)
@@ -58,7 +62,7 @@ struct MCPRequest {
 
 #[derive(Serialize)]
 struct TokenCountResult {
-    url: String,
+    source: String,
     token_count: usize,
     char_count: usize,
     model: String,
@@ -69,11 +73,25 @@ struct TokenCountResult {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let (content, content_type) = fetch_url(&args)?;
+    if args.url.is_some() && args.file.is_some() {
+        anyhow::bail!("Provide either a URL or --file, not both");
+    }
+
+    let (source, content, content_type) = if let Some(ref path) = args.file {
+        let content = std::fs::read_to_string(path)
+            .with_context(|| format!("Failed to read file: {}", path))?;
+        (path.clone(), content, "file".to_string())
+    } else if args.url.is_some() {
+        let (content, content_type) = fetch_url(&args)?;
+        (args.url.clone().unwrap(), content, content_type)
+    } else {
+        anyhow::bail!("No input provided. Specify a URL or use --file <PATH>");
+    };
+
     let token_count = count_tokens(&content, &args.model)?;
 
     let result = TokenCountResult {
-        url: args.url.clone(),
+        source,
         token_count,
         char_count: content.len(),
         model: args.model.clone(),
@@ -84,7 +102,7 @@ fn main() -> Result<()> {
     if args.json {
         println!("{}", serde_json::to_string_pretty(&result)?);
     } else {
-        println!("URL: {}", result.url);
+        println!("Source: {}", result.source);
         println!("Content-Type: {}", result.content_type);
         println!("Character count: {}", result.char_count);
         println!("Token count ({}): {}", result.model, result.token_count);
@@ -97,6 +115,11 @@ fn main() -> Result<()> {
 }
 
 fn fetch_url(args: &Args) -> Result<(String, String)> {
+    let url = args
+        .url
+        .as_ref()
+        .context("URL is required for fetching")?;
+
     let client = Client::builder()
         .timeout(Duration::from_secs(args.timeout))
         .danger_accept_invalid_certs(args.insecure)
@@ -135,14 +158,14 @@ fn fetch_url(args: &Args) -> Result<(String, String)> {
         );
 
         client
-            .post(&args.url)
+            .post(url)
             .headers(headers)
             .json(&mcp_request)
             .send()
             .context("MCP request failed")?
     } else {
         client
-            .get(&args.url)
+            .get(url)
             .headers(headers)
             .send()
             .context("GET request failed")?

@@ -5,6 +5,7 @@ A fast CLI tool to count tokens in URL responses using OpenAI's [tiktoken](https
 ## Features
 
 - Count tokens from any URL response (REST APIs, web pages, etc.)
+- Count tokens from a local file
 - Native MCP (Model Context Protocol) server support for `tools/list` requests
 - Multiple tokenizer encodings (o200k_base, cl100k_base, p50k_base, r50k_base)
 - JSON output for scripting
@@ -23,6 +24,10 @@ cp target/release/token-counter /usr/local/bin/
 ```bash
 # Basic usage - count tokens from a URL
 token-counter https://api.example.com/data
+
+# Count tokens from a local file
+token-counter -f ./response.json
+token-counter --file /path/to/document.txt
 
 # MCP server - get token count for tools/list response
 token-counter -M https://mcp-server.example.com/mcp
@@ -44,6 +49,7 @@ token-counter --headers "Authorization:Bearer token123" https://api.example.com/
 
 | Option | Description |
 |--------|-------------|
+| `-f, --file <PATH>` | Read input from a local file instead of a URL |
 | `-m, --model <MODEL>` | Tokenizer encoding (default: o200k_base) |
 | `-M, --mcp` | Treat URL as MCP server (sends tools/list request) |
 | `-t, --timeout <SECS>` | Request timeout in seconds (default: 30) |
@@ -65,7 +71,7 @@ token-counter --headers "Authorization:Bearer token123" https://api.example.com/
 ## Example Output
 
 ```
-URL: https://api.example.com/data
+Source: https://api.example.com/data
 Content-Type: application/json
 Character count: 175278
 Token count (o200k_base): 43153
@@ -74,7 +80,7 @@ Token count (o200k_base): 43153
 JSON output:
 ```json
 {
-  "url": "https://api.example.com/data",
+  "source": "https://api.example.com/data",
   "token_count": 43153,
   "char_count": 175278,
   "model": "o200k_base",
